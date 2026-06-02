@@ -1,14 +1,16 @@
 {
-  description = "minimalbase-ng + lidarr service";
+  description = "minimalbase-ng + bazarr service";
+
   inputs = {
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase-ng";
-    lidarr-src = {
-      url = "https://lidarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=x64";
+    bazarr-src = {
+      url = "github:morpheusaso/bazarr";
       flake = false;
     };
   };
-  outputs = { self, nixpkgs, minimalbase, lidarr-src }:
+
+  outputs = { self, nixpkgs, minimalbase, bazarr-src }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs {
@@ -17,88 +19,102 @@
         allowUnfree = true;
       };
     };
-    opensslLib = pkgs.openssl.out;
-    sqliteLib = pkgs.sqlite.out;
+
     # ----------------------------
-    # Lidarr package
+    # Bazarr Python environment
     # ----------------------------
-    lidarr = pkgs.stdenv.mkDerivation {
-      pname = "lidarr";
+    bazarrPython = pkgs.python3.withPackages (ps: [
+      ps.gevent
+      ps.gevent-websocket
+      ps.cryptography
+      ps.pyopenssl
+      ps.lxml
+      ps.psutil
+      ps.numpy
+      ps.pillow
+      ps.pysubs2
+      ps.webrtcvad
+      ps.requests
+      ps.apscheduler
+      ps.beautifulsoup4
+      ps.setuptools
+    ]);
+
+    bazarr = pkgs.stdenv.mkDerivation {
+      pname = "bazarr";
       version = "latest";
-      src = lidarr-src;
-      nativeBuildInputs = [
-        pkgs.autoPatchelfHook
-      ];
-      buildInputs = [
-        pkgs.icu
-        pkgs.curl
-        pkgs.sqlite
-        opensslLib
-        pkgs.zlib
-        pkgs.lttng-ust_2_12
-        pkgs.stdenv.cc.cc.lib
-        pkgs.libmediainfo
-      ];
-      unpackPhase = ''
-        tar -xzf $src
-      '';
+      src = bazarr-src;
+
+      buildInputs = [ bazarrPython ];
+
       installPhase = ''
-        mkdir -p $out/app
-        cp -r . $out/app/
+        mkdir -p $out/app/bazarr
+        cp -r . $out/app/bazarr
       '';
     };
+
     # ----------------------------
     # User database configuration (/etc/passwd)
     # ----------------------------
     passwdFile = pkgs.writeTextDir "etc/passwd" ''
       root:x:0:0:root:/root:/bin/sh
-      lidarr:x:1000:1000:lidarr:/data:/bin/sh
+      bazarr:x:1000:1000:bazarr:/data:/bin/sh
     '';
+
     # ----------------------------
     # ABI generator (Points directly to Nix Store)
     # ----------------------------
-    lidarrAbi = pkgs.writeTextFile {
-      name = "lidarr-abi.json";
+    bazAbi = pkgs.writeTextFile {
+      name = "bazarr-abi.json";
       text = builtins.toJSON {
         version = 2;
         process = {
-          exec = "${lidarr}/app/Lidarr/Lidarr";
+          # Point directly to the secure, immutable Nix store Python binary:
+          exec = "${bazarrPython}/bin/python"; 
           args = [
-            "-nobrowser"
-            "-data=/data"
+            "/app/bazarr/bazarr.py"
+            "--no-update"
+            "--config"
+            "/data/"
           ];
         };
       };
-      destination = "/app/main";
+      destination = "/app/main"; 
     };
+
   in {
     packages.${system} = {
-      default = self.packages.${system}.lidarr-image;
-      lidarr-image = pkgs.dockerTools.buildImage {
+      default = self.packages.${system}.bazarr-image;
+      bazarr-image = pkgs.dockerTools.buildImage {
         name = "minimalbase-ng";
         tag = "latest";
         fromImage = minimalbase.packages.${system}.base-image;
+
         copyToRoot = pkgs.buildEnv {
           name = "root";
           paths = [
             pkgs.coreutils
             pkgs.tzdata
             pkgs.cacert
-            pkgs.chromaprint
-            pkgs.mediainfo
-            lidarr
-            lidarrAbi
+            pkgs.ffmpeg-headless
+            pkgs.unrar
+            pkgs.p7zip
+
+            bazarr
+            bazAbi
             passwdFile
           ];
         };
+
         config = {
           Entrypoint = [ "${minimalbase.packages.${system}.container-init}/bin/container-init" ];
+
           User = "1000:1000";
+
           Env = [
             "PATH=/bin"
             "TZ=UTC"
             "LANG=en_US.UTF-8"
-            "LD_LIBRARY_PATH=${pkgs.icu}/lib:${opensslLib}/lib:${pkgs.zlib}/lib:${pkgs.lttng-ust_2_12}/lib:${sqliteLib}/lib:${pkgs.libmediainfo}/lib"
           ];
         };
       };
