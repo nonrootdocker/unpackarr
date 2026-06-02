@@ -1,8 +1,8 @@
 {
-  description = "minimalbase-ng + unpackerr service";
+  description = "minimalbase + unpackerr service";
   inputs = {
     nixpkgs.follows = "minimalbase/nixpkgs";
-    minimalbase.url = "github:nonrootdocker/minimalbase-ng";
+    minimalbase.url = "github:nonrootdocker/minimalbase";
     unpackerr-src = {
       url = "github:unpackerr/unpackerr";
       flake = false;
@@ -53,7 +53,7 @@
     packages.${system} = {
       default = self.packages.${system}.unpackerr-image;
       unpackerr-image = pkgs.dockerTools.buildImage {
-        name = "minimalbase-ng";
+        name = "minimalbase";
         tag = "latest";
         fromImage = minimalbase.packages.${system}.base-image;
         copyToRoot = pkgs.buildEnv {
