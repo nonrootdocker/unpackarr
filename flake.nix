@@ -4,7 +4,7 @@
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase-ng";
     sonarr-src = {
-      url = "https://services.sonarr.tv/v1/update/main/updatefile?os=linux&runtime=netcore&arch=x64";
+      url = "https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=x64";
       flake = false;
     };
   };
