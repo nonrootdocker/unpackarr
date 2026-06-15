@@ -46,11 +46,11 @@
     "unpackerr-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1776101506,
-        "narHash": "sha256-nH4ZSBGv4/Ey4H+Lk0hWBeztSplU62DsGIiY135Rp3E=",
+        "lastModified": 1781497780,
+        "narHash": "sha256-Tf+KgwvqPNTijJtehmH7piyaOPMBVCB+SWXt/l5pcVk=",
         "owner": "unpackerr",
         "repo": "unpackerr",
-        "rev": "d6fdf16efdfc29fd22543ba74c8aad6f2d06ee59",
+        "rev": "63dfd08d2d0bda3d59d92eb9778e2ccf59207bdd",
         "type": "github"
       },
       "original": {
