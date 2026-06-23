@@ -46,17 +46,13 @@
     "unpackerr-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1781497780,
-        "narHash": "sha256-Tf+KgwvqPNTijJtehmH7piyaOPMBVCB+SWXt/l5pcVk=",
-        "owner": "unpackerr",
-        "repo": "unpackerr",
-        "rev": "63dfd08d2d0bda3d59d92eb9778e2ccf59207bdd",
-        "type": "github"
+        "narHash": "sha256-tAy/KFGzYAB+j7ADT3dUF9A+lmpnhXwDzCJibXgB97o=",
+        "type": "file",
+        "url": "https://github.com/unpackerr/unpackerr/releases/latest/download/unpackerr.amd64.linux.gz"
       },
       "original": {
-        "owner": "unpackerr",
-        "repo": "unpackerr",
-        "type": "github"
+        "type": "file",
+        "url": "https://github.com/unpackerr/unpackerr/releases/latest/download/unpackerr.amd64.linux.gz"
       }
     }
   },

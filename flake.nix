@@ -4,7 +4,8 @@
     nixpkgs.follows = "minimalbase/nixpkgs";
     minimalbase.url = "github:nonrootdocker/minimalbase";
     unpackerr-src = {
-      url = "github:unpackerr/unpackerr";
+      type = "file";
+      url = "https://github.com/unpackerr/unpackerr/releases/latest/download/unpackerr.amd64.linux.gz";
       flake = false;
     };
   };
@@ -17,14 +18,29 @@
     };
 
     # ----------------------------
-    # Unpackerr package
+    # Unpackerr package (prebuilt release binary, gzip-compressed)
     # ----------------------------
-    unpackerr = pkgs.buildGoModule {
+    unpackerr = pkgs.stdenv.mkDerivation {
       pname = "unpackerr";
-      version = "1.0.4";
+      version = "release";
       src = unpackerr-src;
-      vendorHash = "sha256-T1/QeT+JbS5qjEIMj/iaalPrcq25dv9spIOJlmhehgw=";
+      dontUnpack = true;
+      nativeBuildInputs = [ pkgs.autoPatchelfHook pkgs.gzip ];
+      buildInputs = [ pkgs.stdenv.cc.cc.lib ];
+      installPhase = ''
+        mkdir -p $out/bin
+        gunzip -c $src > $out/bin/unpackerr
+        chmod +x $out/bin/unpackerr
+      '';
     };
+    # ----------------------------
+    # Unpackerr version: read from the binary's own `--version` output.
+    # Exposed as the `version` output for CI tagging.
+    # ----------------------------
+    unpackerrVersion = pkgs.runCommand "unpackerr-version" { } ''
+      ${unpackerr}/bin/unpackerr --version 2>/dev/null \
+        | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -n1 | tr -d '\n' > $out
+    '';
 
     # ----------------------------
     # User database configuration (/etc/passwd)
@@ -52,8 +68,9 @@
   in {
     packages.${system} = {
       default = self.packages.${system}.unpackerr-image;
+      version = unpackerrVersion;
       unpackerr-image = pkgs.dockerTools.buildImage {
-        name = "minimalbase";
+        name = "unpackerr";
         tag = "latest";
         fromImage = minimalbase.packages.${system}.base-image;
         copyToRoot = pkgs.buildEnv {
